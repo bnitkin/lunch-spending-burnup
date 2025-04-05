@@ -37,6 +37,7 @@ async function main() {
         expenses: true,
         expenses_last: true,
         expected_transactions: true,
+        safe_spend: 3250,
     };
 
     // Generate timestamps for this month and last
@@ -138,9 +139,11 @@ async function main() {
             `v1/plaid_accounts`, token);
     let cards = 0
     let checking = 0;
+    let savings = 0;
     for (asset of assets.plaid_accounts) {
         if (asset.subtype == "credit card") cards += asset.to_base
         if (asset.subtype == "checking") checking += asset.to_base
+        if (asset.subtype == "savings") savings += asset.to_base
     }
     console.log(cards, checking);
 
@@ -154,32 +157,16 @@ async function main() {
 
     let c = canvas.getContext('2d');
 
-    c.font = `${canvas_size/20}pt monospace`;
+    c.font = `${canvas_size/25}pt monospace`;
     c.fillStyle = '#000'
 
 function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
-    c.fillText(`Checking: ${pad(checking)}`, width*.02, height*.08);
-    c.fillText(`Cards:    ${pad(cards)}`, width*.02, height*.16);
-    c.fillText(`Net Cash: ${pad(checking-cards)}`, width*.02, height*0.24);
-
-    c.fillText(`Spent:    ${pad(expenses_total)}`, width*.02, height*0.32);
-
-    // Top and bottom of the graph view
-    c.fillText(`$${chart_max_val}`, width*.02, height*.42);
-    c.fillText('$0', width*.92, height - 1);
+    c.fillText(`Savings:  ${pad(savings)} | ${Math.round(savings / expenses_last_total)}mo`, width*.02, height*.08);
+    c.fillText(`Checking: ${pad(checking)} |`, width*.02, height*.16);
+    c.fillText(`Cards:   -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
+    c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_total)} left`, width*.02, height*0.32);
 
     c.lineWidth = width/60;
-    c.strokeStyle = '#999';
-    c.beginPath();
-    c.lineTo(width*.24, height*.4);
-    c.lineTo(width,     height*.4);
-    c.stroke();
-    c.beginPath();
-    c.lineTo(0,     height - c.lineWidth);
-    c.lineTo(width*.90, height - c.lineWidth);
-    c.stroke();
-
-
     c.lineCap = 'round';
     c.lineJoin = 'round';
     c.textAlign = "right";
@@ -192,21 +179,40 @@ function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
         monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, false);
     }
 
-    if (params.income) {
-        c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val);
-    }
-
     c.strokeStyle = '#C55';
     if (params.expenses_last) {
         c.globalAlpha = 0.3;
         monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, false);
     }
 
+    c.strokeStyle = '#5C5';
+    if (params.income) {
+        c.globalAlpha = 1.0;
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val);
+    }
+
+    c.strokeStyle = '#C55';
     if (params.expenses) {
         c.globalAlpha = 1.0;
         monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val);
     }
+
+    // Top and bottom of the graph view
+    c.strokeStyle = '#999';
+    c.textAlign = "left";
+    c.fillStyle = '#999';
+    c.fillText(`$${chart_max_val}`, width*.02, height*.42);
+    c.fillText('$0', width*.92, height - 1);
+
+    c.setLineDash([]);
+    c.beginPath();
+    c.lineTo(width*.24, height*.4);
+    c.lineTo(width,     height*.4);
+    c.stroke();
+    c.beginPath();
+    c.lineTo(0,     height - c.lineWidth);
+    c.lineTo(width*.90, height - c.lineWidth);
+    c.stroke();
 }
 
 function monthGraph(c, left, top, width, height, data, max_val=4000, dash=true) {
