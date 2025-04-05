@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>My Line Graph</title>
+        <script>
+async function get(endpoint, token) {
+    url = "https://dev.lunchmoney.app/" + endpoint;
+    headers = {
+        'Accept': '*/*',
+        'Authorization': 'Bearer ' + token,
+        };
+
+    console.log(url, token);
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: headers});
+
+        if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log(json);
+        return json;
+
+    } catch (error) {
+    console.error(error.message);
+    }
+}
+
+async function main() {
+    var params = {
+        income: true,
+        income_last: true,
+        expenses: true,
+        expenses_last: true,
+        expected_transactions: true,
+    };
+
+    // Generate timestamps for this month and last
+    let year = new Date().getFullYear();
+    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const day = (new Date().getDate()).toString().padStart(2, '0');
+    const end = `${year}-${month}-${day}`;
+
+    const lastMonth = new Date().getMonth();
+    if (lastMonth == 0) {
+        lastMonth = 12
+        year-=1;
+    }
+    const start = `${year}-${lastMonth.toString().padStart(2, '0')}-01`;
+    console.log(start, end);
+
+    // Get token from URL anchor tag (pretty sure that's not sent to server?)
+    // Then fetch transactions.
+    const token = window.location.hash.split('#')[1] || '';
+    const transactions = await get(
+        `v1/transactions/?start_date=${start}&end_date=${end}`, token);
+
+    if (transactions.has_more) {
+        console.error("Ignoring has_more; results will be incomplete.")
+    }
+
+    let expenses = new Array(32).fill(0);
+    let expenses_last = new Array(32).fill(0);
+    let income = new Array(32).fill(0);
+    let income_last = new Array(32).fill(0);
+
+    for (const tx of transactions.transactions) {
+        if (tx.exclude_from_totals) {
+            console.log(`ignoring ${tx.date} for ${tx.amount}`);
+            continue;
+        }
+        console.log(`processing ${tx.date} for ${tx.amount}`);
+        let day = parseInt(tx.date.slice(-2))
+        let amount = parseInt(tx.amount);
+        if (tx.date.includes(`-${month}-`)) {
+            if (tx.is_income)
+                income[day] -= amount;
+            else
+                expenses[day] += amount;
+        } else {
+            if (tx.is_income)
+                income_last[day] -= amount;
+            else
+                expenses_last[day] += amount;
+        }
+    }
+
+    const income_total = Math.abs(income.reduce((sum, num) => sum + num));
+    const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
+    const expenses_total = Math.abs(expenses.reduce((sum, num) => sum + num));
+    const expenses_last_total = Math.abs(expenses_last.reduce((sum, num) => sum + num));
+
+    let largest_category = Math.max(
+            income_total, income_last_total,
+            expenses_total, expenses_last_total);
+
+    // Drawing data.
+    let canvas = document.getElementById('graph');
+    const canvas_size  = Math.min(window.innerHeight, window.innerWidth);
+    canvas.width = canvas_size;
+    canvas.height = canvas_size;
+    const { width, height } = canvas.getBoundingClientRect();
+
+    let c = canvas.getContext('2d');
+    c.lineWidth = 4;
+    c.lineCap = 'round';
+    c.font = `${canvas_size/20}pt monospace`;
+    c.textAlign = "right";
+
+    if (params.income_last) {
+        c.strokeStyle = '#AFA';
+        c.fillStyle = c.strokeStyle;
+        c.fillText(`$${income_last_total}`, width*.95, canvas_size*.1);
+        monthGraph(c, 0, height*.3, width, height*.7-10, income_last, largest_category, false);
+    }
+
+    if (params.income) {
+        c.strokeStyle = '#5C5';
+        c.fillStyle = c.strokeStyle;
+        c.fillText(`Income: $${income_total}`, width*2/3, canvas_size*.1);
+        monthGraph(c, 0, height*.3, width, height*.7-10, income, largest_category);
+    }
+
+    if (params.expenses_last) {
+        c.strokeStyle = '#FAA';
+        c.fillStyle = c.strokeStyle;
+        c.fillText(`$${expenses_last_total}`, width*.95, canvas_size*.2);
+        monthGraph(c, 0, height*.3, width, height*.7-10, expenses_last, largest_category, false);
+    }
+
+    if (params.expenses) {
+        c.strokeStyle = '#C55';
+        c.fillStyle = c.strokeStyle;
+        c.fillText(`Expenses: $${expenses_total}`, width*2/3, canvas_size*.2);
+        monthGraph(c, 0, height*.3, width, height*.7-10, expenses, largest_category);
+    }
+        c.fillStyle = '#000';
+        c.fillText(`Net: $${income_total - expenses_total}`, width*2/3, canvas_size*.3);
+        c.fillStyle = '#AAA';
+        c.fillText(`$${income_last_total - expenses_last_total}`, width*.95, canvas_size*.3);
+}
+
+function monthGraph(c, left, top, width, height, data, max_val=4000, dash=true) {
+    point = function(x, y) {
+        x = x * width / 31 + left;
+        y = top + height - y * height / max_val;
+        c.lineTo(x, y);
+        return
+    }
+
+    var today = new Date().getDate();
+
+    c.beginPath();
+    c.setLineDash([]);
+    let total = 0;
+    for (let day=1; day<31; day++) {
+        if (dash && day == today + 1) {
+            c.stroke();
+            return;
+            c.beginPath();
+            c.setLineDash([3, 8]);
+        }
+        total += data[day];
+        point(day, total);
+    }
+    c.stroke();
+}
+
+window.onload = main;
+        </script>
+    </head>
+    <body>
+        <canvas id="graph" width=300 height=300>
+        </canvas>
+    </body>
+</html>
