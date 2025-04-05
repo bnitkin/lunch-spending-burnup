@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Income/Expenses Graph</title>
+        <script>
+async function get(endpoint, token) {
+    url = "https://dev.lunchmoney.app/" + endpoint;
+    headers = {
+        'Accept': '*/*',
+        'Authorization': 'Bearer ' + token,
+        };
+
+    console.log(url, token);
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: headers});
+
+        if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+        }
+
+        const json = await response.json();
+        console.log(json);
+        return json;
+
+    } catch (error) {
+    console.error(error.message);
+    }
+}
+
+async function main() {
+    var params = {
+        income: true,
+        income_last: true,
+        expenses: true,
+        expenses_last: true,
+        expected_transactions: true,
+    };
+
+    // Generate timestamps for this month and last
+    let year = new Date().getFullYear();
+    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const day = (new Date().getDate()).toString().padStart(2, '0');
+    const end = `${year}-${month}-${day}`;
+
+    let lastMonth = new Date().getMonth();
+    if (lastMonth == 0) {
+        lastMonth = 12
+        year-=1;
+    }
+    lastMonth = lastMonth.toString().padStart(2, '0');
+    const start = `${year}-${lastMonth}-01`;
+
+    let expenses = new Array(32).fill(0);
+    let expenses_last = new Array(32).fill(0);
+    let income = new Array(32).fill(0);
+    let income_last = new Array(32).fill(0);
+
+    // Get token from URL anchor tag (pretty sure that's not sent to server?)
+    const token = window.location.hash.split('#')[1] || '';
+
+    // Process transactions
+    const transactions = await get(
+        `v1/transactions/?start_date=${start}&end_date=${end}`, token);
+
+    if (transactions.has_more) {
+        console.error("Ignoring has_more; results will be incomplete.")
+    }
+
+
+    for (const tx of transactions.transactions) {
+        if (tx.exclude_from_totals) {
+            console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
+            continue;
+        }
+        console.log(`${tx.date}: processing ${tx.payee} for ${tx.to_base}`);
+        let day = parseInt(tx.date.slice(-2))
+        if (tx.date.includes(`-${month}-`)) {
+            if (tx.is_income)
+                income[day] -= tx.to_base;
+            else
+                expenses[day] += tx.to_base;
+        }
+        if (tx.date.includes(`-${lastMonth}-`)) {
+            if (tx.is_income)
+                income_last[day] -= tx.to_base;
+            else
+                expenses_last[day] += tx.to_base;
+        }
+    }
+
+    // Process upcoming recurring
+    const recurring = await get(
+            `v1/recurring_items`, token);
+
+    if (transactions.has_more) {
+        console.error("Ignoring has_more; results will be incomplete.")
+    }
+
+    for (const tx of recurring) {
+        if (tx.exclude_from_totals) {
+            console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
+            continue;
+        }
+        for (const occur_date in tx.occurrences) {
+            // Ignore transactions that've happened
+            if (tx.occurrences[occur_date].length != 0) {
+                //console.log(`${occur_date}: ${tx.payee} matched ${tx.to_base}`);
+                continue;
+            }
+            // Ignore other month's expectedmissing transactions
+            if (!occur_date.includes(`-${month}-`)) {
+                continue;
+            }
+            const day = occur_date.slice(-2)
+                console.log(`${occur_date}: ${tx.payee} expected for ${tx.to_base}`);
+            if (tx.is_income)
+                income[day] -= tx.to_base;
+            else
+                expenses[day] += tx.to_base;
+        }
+    }
+
+    const income_total = Math.abs(income.reduce((sum, num) => sum + num));
+    const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
+    const expenses_total = Math.abs(expenses.reduce((sum, num) => sum + num));
+    const expenses_last_total = Math.abs(expenses_last.reduce((sum, num) => sum + num));
+
+    let chart_max_val = Math.max(
+            income_total, income_last_total,
+            expenses_total, expenses_last_total);
+    chart_max_val = Math.ceil(chart_max_val/500) * 500;
+
+    // Process assets to get current cash position
+    const assets = await get(
+            `v1/plaid_accounts`, token);
+    let cards = 0
+    let checking = 0;
+    for (asset of assets.plaid_accounts) {
+        if (asset.subtype == "credit card") cards += asset.to_base
+        if (asset.subtype == "checking") checking += asset.to_base
+    }
+    console.log(cards, checking);
+
+
+    // Drawing data.
+    let canvas = document.getElementById('graph');
+    const canvas_size  = Math.min(window.innerHeight, window.innerWidth);
+    canvas.width = canvas_size;
+    canvas.height = canvas_size;
+    const { width, height } = canvas.getBoundingClientRect();
+
+    let c = canvas.getContext('2d');
+
+    c.font = `${canvas_size/20}pt monospace`;
+    c.fillStyle = '#000'
+
+function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
+    c.fillText(`Checking: ${pad(checking)}`, width*.02, height*.08);
+    c.fillText(`Cards:    ${pad(cards)}`, width*.02, height*.16);
+    c.fillText(`Net Cash: ${pad(checking-cards)}`, width*.02, height*0.24);
+
+    c.fillText(`Spent:    ${pad(expenses_total)}`, width*.02, height*0.32);
+
+    // Top and bottom of the graph view
+    c.fillText(`$${chart_max_val}`, width*.02, height*.42);
+    c.fillText('$0', width*.92, height - 1);
+
+    c.lineWidth = width/60;
+    c.strokeStyle = '#999';
+    c.beginPath();
+    c.lineTo(width*.24, height*.4);
+    c.lineTo(width,     height*.4);
+    c.stroke();
+    c.beginPath();
+    c.lineTo(0,     height - c.lineWidth);
+    c.lineTo(width*.90, height - c.lineWidth);
+    c.stroke();
+
+
+    c.lineCap = 'round';
+    c.lineJoin = 'round';
+    c.textAlign = "right";
+
+    const line_height = 0.08;
+
+    c.strokeStyle = '#5C5';
+    if (params.income_last) {
+        c.globalAlpha = 0.3;
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, false);
+    }
+
+    if (params.income) {
+        c.globalAlpha = 1.0;
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val);
+    }
+
+    c.strokeStyle = '#C55';
+    if (params.expenses_last) {
+        c.globalAlpha = 0.3;
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, false);
+    }
+
+    if (params.expenses) {
+        c.globalAlpha = 1.0;
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val);
+    }
+}
+
+function monthGraph(c, left, top, width, height, data, max_val=4000, dash=true) {
+    point = function(x, y) {
+        x = x * width / 33 + left;
+        y = top + height - y * height / max_val;
+        c.lineTo(x, y);
+        return
+    }
+
+    var today = new Date().getDate();
+
+    c.beginPath();
+    c.setLineDash([]);
+    let total = 0;
+    for (let day=1; day<=31; day++) {
+        if (dash && day == today + 1) {
+            c.stroke();
+            c.beginPath();
+            c.setLineDash([0, c.lineWidth*2]);
+        }
+        total += data[day];
+        point(day, total);
+    }
+    c.stroke();
+}
+
+window.onload = main;
+        </script>
+    </head>
+    <body>
+        <canvas id="graph" width=300 height=300>
+        </canvas>
+    </body>
+</html>
