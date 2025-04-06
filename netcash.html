@@ -31,14 +31,32 @@ async function get(endpoint, token) {
 }
 
 async function main() {
-    var params = {
-        income: true,
-        income_last: true,
-        expenses: true,
-        expenses_last: true,
-        expected_transactions: true,
-        safe_spend: 3250,
+    // Parse a URL parameter in a type-aware way
+    function param(name, missing) {
+        let value = new URLSearchParams(window.location.search).get(name);
+        if (value === null) return missing;
+        if (typeof missing === "boolean") {
+            if (value.includes("true")) return true;
+            if (value.includes("false")) return false;
+            return missing;
+        }
+        if (typeof missing === "number") {
+            if (!isNan(parseInt(value))) return parseInt(value);
+            return missing;
+        }
+    }
+    let params = {
+        income: param('income', true),
+        income_last: param('income_last', false),
+        expenses: param('expenses', true),
+        expenses_last: param('expenses_last', true),
+        expected_transactions: param('expected', true),
+        safe_spend: param('spend', 3250),
     };
+    console.log(params);
+
+
+
 
     // Generate timestamps for this month and last
     let year = new Date().getFullYear();
@@ -93,34 +111,36 @@ async function main() {
     }
 
     // Process upcoming recurring
-    const recurring = await get(
-            `v1/recurring_items`, token);
+    if (params.expected_transactions) {
+        const recurring = await get(
+                `v1/recurring_items`, token);
 
-    if (transactions.has_more) {
-        console.error("Ignoring has_more; results will be incomplete.")
-    }
-
-    for (const tx of recurring) {
-        if (tx.exclude_from_totals) {
-            console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
-            continue;
+        if (transactions.has_more) {
+            console.error("Ignoring has_more; results will be incomplete.")
         }
-        for (const occur_date in tx.occurrences) {
-            // Ignore transactions that've happened
-            if (tx.occurrences[occur_date].length != 0) {
-                //console.log(`${occur_date}: ${tx.payee} matched ${tx.to_base}`);
+
+        for (const tx of recurring) {
+            if (tx.exclude_from_totals) {
+                console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
                 continue;
             }
-            // Ignore other month's expectedmissing transactions
-            if (!occur_date.includes(`-${month}-`)) {
-                continue;
+            for (const occur_date in tx.occurrences) {
+                // Ignore transactions that've happened
+                if (tx.occurrences[occur_date].length != 0) {
+                    //console.log(`${occur_date}: ${tx.payee} matched ${tx.to_base}`);
+                    continue;
+                }
+                // Ignore other month's expectedmissing transactions
+                if (!occur_date.includes(`-${month}-`)) {
+                    continue;
+                }
+                const day = occur_date.slice(-2)
+                    console.log(`${occur_date}: ${tx.payee} expected for ${tx.to_base}`);
+                if (tx.is_income)
+                    income[day] -= tx.to_base;
+                else
+                    expenses[day] += tx.to_base;
             }
-            const day = occur_date.slice(-2)
-                console.log(`${occur_date}: ${tx.payee} expected for ${tx.to_base}`);
-            if (tx.is_income)
-                income[day] -= tx.to_base;
-            else
-                expenses[day] += tx.to_base;
         }
     }
 
@@ -176,25 +196,26 @@ function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
     c.strokeStyle = '#5C5';
     if (params.income_last) {
         c.globalAlpha = 0.3;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, false);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, "all");
     }
 
     c.strokeStyle = '#C55';
     if (params.expenses_last) {
         c.globalAlpha = 0.3;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, false);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, "all");
     }
 
+    const future_style = params.expected_transactions ? "dash" : "stop";
     c.strokeStyle = '#5C5';
     if (params.income) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val, future_style);
     }
 
     c.strokeStyle = '#C55';
     if (params.expenses) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val, future_style);
     }
 
     // Top and bottom of the graph view
@@ -215,7 +236,7 @@ function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
     c.stroke();
 }
 
-function monthGraph(c, left, top, width, height, data, max_val=4000, dash=true) {
+function monthGraph(c, left, top, width, height, data, max_val=4000, future="all") {
     point = function(x, y) {
         x = x * width / 33 + left;
         y = top + height - y * height / max_val;
@@ -229,10 +250,14 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, dash=true) 
     c.setLineDash([]);
     let total = 0;
     for (let day=1; day<=31; day++) {
-        if (dash && day == today + 1) {
+        if ((future === "dash") && day == today + 1) {
             c.stroke();
             c.beginPath();
             c.setLineDash([0, c.lineWidth*2]);
+        }
+        if ((future === "stop") && day == today + 1) {
+            c.stroke();
+            return;
         }
         total += data[day];
         point(day, total);
