@@ -32,17 +32,17 @@ This little visualizer is a single HTML file and
 has no dependencies (other than Lunch Money).
 You'll need to generate an API key to use it.
 
-Either go to https://nitkin.net/lunch/chart.html#<API KEY>
+Either go to https://nitkin.net/lunch/chart.html#API_KEY
 (the anchor tag isn't sent to the server, so only Lunch Money sees your key)
 
 Or download the file and open it in your favorite browser. Something like
-file:///home/username/chart.html#<API KEY>
+file:///home/username/chart.html#API_KEY
 
 ## Configuration
 The widget is configurable with URL parameters. You can customize which trendlines draw,
 and adjust some of the numbers. Parameters are all URL-encoded, i.e.
 
-`netcash.html?income=false&expected_transactions=true&safe_spend=4000#<API KEY>`
+`netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY`
 
  - `income`: `true` or `false`. Default `true`. Shows current-month income
  - `income_last`: `true` or `false`. Default `false`. Shows prior-month income
