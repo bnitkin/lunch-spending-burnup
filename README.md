@@ -1,6 +1,10 @@
 # lunch-spending-burnup
 Little widget for Lunch Money that shows current and last-month spending/savings.
 
+![image](https://github.com/user-attachments/assets/2e7ee8fb-b7a1-4da0-b195-c4e689e6816e)
+
+(the top numbers use the Plaid account API, and that doesn't work for Lunch's demo budget)
+
 This widget was inspired by the Rocket Money burn-up graph to show cumulative income
 and spending, per month. It's a good way to show a lot of data in a pretty readable format.
 (theirs is more polished, but I won't sell your personal data. Or see it.)
