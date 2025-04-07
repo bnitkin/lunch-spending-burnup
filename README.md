@@ -25,7 +25,9 @@ The top fields show cash holdings (synchronized accounts only) and a [reverse bu
    account that all the cards pay from, a positive net means there's
    enough in checking to autopay the cards.
  - Spent: This is total spending for the month. It includes future
-   recurring transactions, if they're enabled (see `expected` option)
+   recurring transactions, if they're enabled (see `expected` option).
+   The `net` field on the right generates remaining spending for the
+   month using your `save_spend` and current+recurring spending 
    
 ### Other Features
  - The chart automatically resizes, rounding to the next $500.
