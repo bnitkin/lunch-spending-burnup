@@ -33,7 +33,7 @@ has no dependencies (other than Lunch Money).
 You'll need to generate an API key to use it.
 
 Either go to https://nitkin.net/lunch/chart.html#API_KEY
-(the anchor tag isn't sent to the server, so only Lunch Money sees your key)
+(the anchor tag is never sent to servers, so only Lunch Money sees your key)
 
 Or download the file and open it in your favorite browser. Something like
 file:///home/username/chart.html#API_KEY
@@ -42,12 +42,15 @@ file:///home/username/chart.html#API_KEY
 The widget is configurable with URL parameters. You can customize which trendlines draw,
 and adjust some of the numbers. Parameters are all URL-encoded, i.e.
 
-`netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY`
+```
+nitkin.net/lunch/netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY
+```
 
  - `income`: `true` or `false`. Default `true`. Shows current-month income
  - `income_last`: `true` or `false`. Default `false`. Shows prior-month income
  - `expenses`: `true` or `false`. Default `true`. Shows current-month expenses
  - `expenses_last`: `true` or `false`. Default `true`. Shows prior-month expenses
+ - `fill_last`: `true` or `false`. Default `true`. Render last-month transactions as filled instead of a line
  - `expected`: `true` or `false`. Default `true`. Parse and show expected
         recurring transactions for the month. They render on the chart as a dotted line,
         and will also impact `Spent`/`left` math in the top box.

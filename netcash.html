@@ -52,6 +52,7 @@ async function main() {
         expenses_last: param('expenses_last', true),
         expected_transactions: param('expected', true),
         safe_spend: param('spend', 3250),
+        fill_last: param('fill_last', true),
     };
     console.log(params);
 
@@ -196,26 +197,26 @@ function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
     c.strokeStyle = '#5C5';
     if (params.income_last) {
         c.globalAlpha = 0.3;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, "all");
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_last, chart_max_val, params.fill_last, "all");
     }
 
     c.strokeStyle = '#C55';
     if (params.expenses_last) {
         c.globalAlpha = 0.3;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, "all");
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, params.fill_last, "all");
     }
 
     const future_style = params.expected_transactions ? "dash" : "stop";
     c.strokeStyle = '#5C5';
     if (params.income) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val, future_style);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val, false, future_style);
     }
 
     c.strokeStyle = '#C55';
     if (params.expenses) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val, future_style);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val, false, future_style);
     }
 
     // Top and bottom of the graph view
@@ -236,7 +237,7 @@ function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
     c.stroke();
 }
 
-function monthGraph(c, left, top, width, height, data, max_val=4000, future="all") {
+function monthGraph(c, left, top, width, height, data, max_val=4000, fill, future="all") {
     point = function(x, y) {
         x = x * width / 33 + left;
         y = top + height - y * height / max_val;
@@ -262,7 +263,14 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, future="all
         total += data[day];
         point(day, total);
     }
-    c.stroke();
+    if (fill) {
+        point(31, 0)
+        point(0, 0)
+        c.fillStyle = c.strokeStyle;
+        c.fill();
+    } else {
+        c.stroke();
+    }
 }
 
 window.onload = main;
