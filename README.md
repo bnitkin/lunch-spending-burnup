@@ -40,6 +40,9 @@ First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. T
  - go to https://nitkin.net/lunch/chart.html#API_KEY
  - download `netcash.html` and open it in your favorite browser. Something like
    `file:///home/username/chart.html#API_KEY`
+ - for iOS, use (Glimpse 2)[https://apps.apple.com/us/app/glimpse-2/id1524217845] (or similar)
+   to view the webpage as a widget. Use a 4h+ refresh interval to not spam the Lunch API.
+ - I'm sure there's something similar on Android, but I don't have one to check.
 
 ### Configuration
 There are a bunch of options you can cinfigure with URL parameters: which trendlines draw,
