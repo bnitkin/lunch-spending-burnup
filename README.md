@@ -1,51 +1,47 @@
 # lunch-spending-burnup
 Little widget for Lunch Money that shows current and last-month spending/savings.
 
+It's inspired by the Rocket Money burn-up graph to show cumulative monthly income
+and spending. It's a good way to show a lot of data in a pretty readable format.
+(theirs is more polished, but I won't sell your personal data. Or see it.
+I don't want your personal data.)
+
 ![widget preview](https://github.com/user-attachments/assets/0def4828-50bf-4389-a84e-d096213f5f0d)
 
 (the top numbers use the Plaid account API, and that doesn't work for Lunch's demo budget)
 
-This widget was inspired by the Rocket Money burn-up graph to show cumulative income
-and spending, per month. It's a good way to show a lot of data in a pretty readable format.
-(theirs is more polished, but I won't sell your personal data. Or see it.)
+### Key
+ - Past expenses are shown in pale red (last month's income is pale green)
+ - Current month's actual income is green; expenses are red.
+ - Recurring expenses are used to generate expected future income/expenses,
+   and are shown as dotted.
 
-Past income and expenses are shown as pale green and red lines.
-
-Current month's actual income is dark green; expenses are dark red.
-
-Recurring expenses are used to generate expected future income/expenses,
-and are shown as dotted.
-
-The chart automatically resizes, rounding to the next $500.
-
-The top fields show net cash and a very simple budget.
+The top fields show cash holdings (synchronized accounts only) and a [reverse budget](https://lunchmoney.app/blog/pay-yourself-first-reverse-budgeting)
  - Savings: the total balance in savings accounts. The right side
-   converts to months of expenses, based on last month's spending.
+   estimates months of expenses, based on last month's spending.
  - Checking: total balance in checking accounts.
  - Cards: total balance on credit cards. Net shows the difference
    between checking and cards. If you have one checking
    account that all the cards pay from, a positive net means there's
    enough in checking to autopay the cards.
-   (plus some margin since credit cards bill for statement-end
-   balance, not current)
  - Spent: This is total spending for the month. It includes future
-   recurring transactions, if they're enabled (see `expected` below)
+   recurring transactions, if they're enabled (see `expected` option)
+   
+### Other Features
+ - The chart automatically resizes, rounding to the next $500.
+ - Options to customize the chart
+ - Privacy-first: no third party calls, no complicated libraries.
+   It's all plain javascript in a single HTML file.
 
-## Usage
-This little visualizer is a single HTML file and
-has no dependencies (other than Lunch Money).
-You'll need to generate an API key to use it.
+### Usage
+First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. Then either:
+ - go to https://nitkin.net/lunch/chart.html#API_KEY
+ - download `netcash.html` and open it in your favorite browser. Something like
+   `file:///home/username/chart.html#API_KEY`
 
-Either go to https://nitkin.net/lunch/chart.html#API_KEY
-(the anchor tag is never sent to servers, so only Lunch Money sees your key)
-
-Or download the file and open it in your favorite browser. Something like
-file:///home/username/chart.html#API_KEY
-
-## Configuration
-The widget is configurable with URL parameters. You can customize which trendlines draw,
-and adjust some of the numbers. Parameters are all URL-encoded, i.e.
-
+### Configuration
+There are a bunch of options you can cinfigure with URL parameters: which trendlines draw,
+whether to include future recurring expenses, and other stuff. Parameters are all URL-encoded, i.e.
 ```
 nitkin.net/lunch/netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY
 ```
@@ -62,4 +58,3 @@ nitkin.net/lunch/netcash.html?income_last=true&expected_transactions=false&safe_
         if you like to calculate savings goals and work backwards to
         a comfortable spending level. This field shows how much is left
         for the month after your actual and expected transactions.
-
