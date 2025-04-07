@@ -1,7 +1,7 @@
 # lunch-spending-burnup
 Little widget for Lunch Money that shows current and last-month spending/savings.
 
-![image](https://github.com/user-attachments/assets/2e7ee8fb-b7a1-4da0-b195-c4e689e6816e)
+![widget preview](https://github.com/user-attachments/assets/0def4828-50bf-4389-a84e-d096213f5f0d)
 
 (the top numbers use the Plaid account API, and that doesn't work for Lunch's demo budget)
 
