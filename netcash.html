@@ -45,6 +45,8 @@ async function main() {
             return missing;
         }
     }
+
+    // URL Parameters - defaults with URL overrides
     let params = {
         income: param('income', true),
         income_last: param('income_last', false),
@@ -56,30 +58,28 @@ async function main() {
     };
     console.log(params);
 
-
-
+    // URL - get token from anchor tag (since that's not sent to server)
+    const token = window.location.hash.split('#')[1] || '';
 
     // Generate timestamps for this month and last
-    let year = new Date().getFullYear();
-    const month = (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const day = (new Date().getDate()).toString().padStart(2, '0');
+    function pad_date(num) {return num.toString().padStart(2, '0')}
+    let   year = new Date().getFullYear();
+    const month = pad_date(new Date().getMonth() + 1);
+    let   lastMonth = pad_date(new Date().getMonth());
+    const day = pad_date(new Date().getDate());
     const end = `${year}-${month}-${day}`;
 
-    let lastMonth = new Date().getMonth();
-    if (lastMonth == 0) {
-        lastMonth = 12
+    if (lastMonth === "00") {
+        lastMonth = "12";
         year-=1;
     }
-    lastMonth = lastMonth.toString().padStart(2, '0');
     const start = `${year}-${lastMonth}-01`;
 
+    // Expense tracking
     let expenses = new Array(32).fill(0);
     let expenses_last = new Array(32).fill(0);
     let income = new Array(32).fill(0);
     let income_last = new Array(32).fill(0);
-
-    // Get token from URL anchor tag (pretty sure that's not sent to server?)
-    const token = window.location.hash.split('#')[1] || '';
 
     // Process transactions
     const transactions = await get(
@@ -88,7 +88,6 @@ async function main() {
     if (transactions.has_more) {
         console.error("Ignoring has_more; results will be incomplete.")
     }
-
 
     for (const tx of transactions.transactions) {
         if (tx.exclude_from_totals) {
@@ -111,7 +110,7 @@ async function main() {
         }
     }
 
-    // Process upcoming recurring
+    // Process recurring (ignoring matched transactions)
     if (params.expected_transactions) {
         const recurring = await get(
                 `v1/recurring_items`, token);
@@ -131,7 +130,7 @@ async function main() {
                     //console.log(`${occur_date}: ${tx.payee} matched ${tx.to_base}`);
                     continue;
                 }
-                // Ignore other month's expectedmissing transactions
+                // Ignore recurring for prior months
                 if (!occur_date.includes(`-${month}-`)) {
                     continue;
                 }
@@ -145,19 +144,8 @@ async function main() {
         }
     }
 
-    const income_total = Math.abs(income.reduce((sum, num) => sum + num));
-    const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
-    const expenses_total = Math.abs(expenses.reduce((sum, num) => sum + num));
-    const expenses_last_total = Math.abs(expenses_last.reduce((sum, num) => sum + num));
-
-    let chart_max_val = Math.max(
-            income_total, income_last_total,
-            expenses_total, expenses_last_total);
-    chart_max_val = Math.ceil(chart_max_val/500) * 500;
-
-    // Process assets to get current cash position
-    const assets = await get(
-            `v1/plaid_accounts`, token);
+    // Process Plaid-synced assets to get current cash position
+    const assets = await get(`v1/plaid_accounts`, token);
     let cards = 0
     let checking = 0;
     let savings = 0;
@@ -168,6 +156,16 @@ async function main() {
     }
     console.log(cards, checking);
 
+    // Compute monthly totals
+    const income_total = Math.abs(income.reduce((sum, num) => sum + num));
+    const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
+    const expenses_total = Math.abs(expenses.reduce((sum, num) => sum + num));
+    const expenses_last_total = Math.abs(expenses_last.reduce((sum, num) => sum + num));
+
+    let chart_max_val = Math.max(
+            income_total, income_last_total,
+            expenses_total, expenses_last_total);
+    chart_max_val = Math.ceil(chart_max_val/500) * 500;
 
     // Drawing data.
     let canvas = document.getElementById('graph');
@@ -181,10 +179,10 @@ async function main() {
     c.font = `${canvas_size/25}pt monospace`;
     c.fillStyle = '#000'
 
-function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
+    function pad(num) {return ('$'+Math.round(num).toString()).padStart(4, ' ')};
     c.fillText(`Savings:  ${pad(savings)} | ${Math.round(savings / expenses_last_total)}mo`, width*.02, height*.08);
     c.fillText(`Checking: ${pad(checking)} |`, width*.02, height*.16);
-    c.fillText(`Cards:   -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
+    c.fillText(`Credit:  -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
     c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_total)} left`, width*.02, height*0.32);
 
     c.lineWidth = width/60;
