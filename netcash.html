@@ -250,21 +250,20 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, fill, futur
     c.beginPath();
     c.setLineDash([]);
     let total = 0;
-    for (let day=1; day<=31; day++) {
+    let day = 1;
+    for (day=1; day<=31; day++) {
         if ((future === "dash") && day == today + 1) {
             c.stroke();
-            c.beginPath();
             c.setLineDash([0, c.lineWidth*2]);
         }
         if ((future === "stop") && day == today + 1) {
-            c.stroke();
-            return;
+            break;
         }
         total += data[day];
         point(day, total);
     }
     if (fill) {
-        point(31, 0)
+        point(day-1, 0)
         point(0, 0)
         c.fillStyle = c.strokeStyle;
         c.fill();
