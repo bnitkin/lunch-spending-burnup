@@ -15,7 +15,7 @@ First, generate a Lunch Money [API Key](https://my.lunchmoney.app/developers). T
  - go to https://nitkin.net/lunch/netcash.html#API_KEY (use your API key)
  - download `netcash.html` and open it in your favorite browser. Something like
    `file:///home/username/netcash.html#API_KEY` (use your API key)
- - for iOS, use [Glimpse 2](https://apps.apple.com/us/app/glimpse-2/id1524217845)c(or similar)
+ - for iOS, use [Glimpse 2](https://apps.apple.com/us/app/glimpse-2/id1524217845) (or similar)
    to view the webpage as a widget. Use a 4h+ refresh interval to not spam the Lunch API.
  - I'm sure there's something similar on Android, but I don't have one to check.
 
@@ -37,15 +37,14 @@ Unless otherwise noted, fields can be set to `true` or `false`
         and will also impact `Spent`/`left` math in the top box.
  - `safe_spend`: Numeric. Default `3250`. Safe-spend provides a reverse budget -
         if you like to calculate savings goals and work backwards to
-        a comfortable spending level. This field shows how much is left
-        for the month after your actual and expected transactions.
+        a comfortable spending level. It's used to compute the `left` field.
 
 ### Key
  - Expenses are red, income is green
  - Last month is shown as a translucent filled-box; this month is a line
  - Expected recurring transactions are displayed as a dotted line
 
-The top fields show cash holdings (synchronized accounts only) and a [reverse budget](https://lunchmoney.app/blog/pay-yourself-first-reverse-budgeting)
+The top fields show cash holdings and a [reverse budget](https://lunchmoney.app/blog/pay-yourself-first-reverse-budgeting)
  - Savings: the total balance in savings accounts. The right side
    estimates cash reserve in months, based on last month's spending.
  - Checking: total balance in checking accounts.
@@ -54,8 +53,7 @@ The top fields show cash holdings (synchronized accounts only) and a [reverse bu
    enough in checking to pay off the cards.
  - Spent: This is total spending for the month. It includes future
    recurring transactions, if they're enabled (see `expected` option).
-   The `left` field estimates remaining safe spending for the
-   month using your `save_spend` and current & recurring spending.
+   The `left` field computes safe spending for the month (`safe_spend - spent`)
    
 ### Other Features
  - The chart automatically resizes, rounding to the next $500.
