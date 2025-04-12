@@ -10,6 +10,35 @@ I don't want your personal data.)
 
 (the top numbers use the Plaid account API, and that doesn't work for Lunch's demo budget)
 
+### Usage
+First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. Then either:
+ - go to https://nitkin.net/lunch/netcash.html#API_KEY
+ - download `netcash.html` and open it in your favorite browser. Something like
+   `file:///home/username/netcash.html#API_KEY`
+ - for iOS, use (Glimpse 2)[https://apps.apple.com/us/app/glimpse-2/id1524217845] (or similar)
+   to view the webpage as a widget. Use a 4h+ refresh interval to not spam the Lunch API.
+ - I'm sure there's something similar on Android, but I don't have one to check.
+
+### Configuration
+There are a bunch of options you can cinfigure with URL parameters: which trendlines draw,
+whether to include future recurring expenses, and other stuff. Parameters are all URL-encoded, i.e.
+```
+nitkin.net/lunch/netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY
+```
+
+ - `income`: `true` or `false`. Default `true`. Shows current-month income
+ - `income_last`: `true` or `false`. Default `false`. Shows prior-month income
+ - `expenses`: `true` or `false`. Default `true`. Shows current-month expenses
+ - `expenses_last`: `true` or `false`. Default `true`. Shows prior-month expenses
+ - `fill_last`: `true` or `false`. Default `true`. Render last-month transactions as filled instead of a line
+ - `expected`: `true` or `false`. Default `true`. Parse and show expected
+        recurring transactions for the month. They render on the chart as a dotted line,
+        and will also impact `Spent`/`left` math in the top box.
+ - `safe_spend`: Numeric. Default `3250`. Safe-spend provides a reverse budget -
+        if you like to calculate savings goals and work backwards to
+        a comfortable spending level. This field shows how much is left
+        for the month after your actual and expected transactions.
+
 ### Key
  - Past expenses are shown in pale red (last month's income is pale green)
  - Current month's actual income is green; expenses are red.
@@ -35,31 +64,4 @@ The top fields show cash holdings (synchronized accounts only) and a [reverse bu
  - Privacy-first: no third party calls, no complicated libraries.
    It's all plain javascript in a single HTML file.
 
-### Usage
-First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. Then either:
- - go to https://nitkin.net/lunch/chart.html#API_KEY
- - download `netcash.html` and open it in your favorite browser. Something like
-   `file:///home/username/chart.html#API_KEY`
- - for iOS, use (Glimpse 2)[https://apps.apple.com/us/app/glimpse-2/id1524217845] (or similar)
-   to view the webpage as a widget. Use a 4h+ refresh interval to not spam the Lunch API.
- - I'm sure there's something similar on Android, but I don't have one to check.
 
-### Configuration
-There are a bunch of options you can cinfigure with URL parameters: which trendlines draw,
-whether to include future recurring expenses, and other stuff. Parameters are all URL-encoded, i.e.
-```
-nitkin.net/lunch/netcash.html?income_last=true&expected_transactions=false&safe_spend=4000#API_KEY
-```
-
- - `income`: `true` or `false`. Default `true`. Shows current-month income
- - `income_last`: `true` or `false`. Default `false`. Shows prior-month income
- - `expenses`: `true` or `false`. Default `true`. Shows current-month expenses
- - `expenses_last`: `true` or `false`. Default `true`. Shows prior-month expenses
- - `fill_last`: `true` or `false`. Default `true`. Render last-month transactions as filled instead of a line
- - `expected`: `true` or `false`. Default `true`. Parse and show expected
-        recurring transactions for the month. They render on the chart as a dotted line,
-        and will also impact `Spent`/`left` math in the top box.
- - `safe_spend`: Numeric. Default `3250`. Safe-spend provides a reverse budget -
-        if you like to calculate savings goals and work backwards to
-        a comfortable spending level. This field shows how much is left
-        for the month after your actual and expected transactions.

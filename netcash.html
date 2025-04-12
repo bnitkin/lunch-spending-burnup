@@ -3,6 +3,10 @@
     <head>
         <title>Income/Expenses Graph</title>
         <script>
+function status(text) {
+    document.getElementById('status').innerHTML += "<br/>" + text;
+    console.log(text);
+}
 async function get(endpoint, token) {
     url = "https://dev.lunchmoney.app/" + endpoint;
     headers = {
@@ -10,7 +14,7 @@ async function get(endpoint, token) {
         'Authorization': 'Bearer ' + token,
         };
 
-    console.log(url, token);
+    status("fetching " + url)
 
     try {
         const response = await fetch(url, {
@@ -18,7 +22,10 @@ async function get(endpoint, token) {
             headers: headers});
 
         if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
+            if (response.status == 401) {
+                status("<b>lunch money returned access denied - check your API key.</b>");
+            }
+            throw new Error(`api returned status ${response.status}`);
         }
 
         const json = await response.json();
@@ -26,7 +33,7 @@ async function get(endpoint, token) {
         return json;
 
     } catch (error) {
-    console.error(error.message);
+        status("error: " + error.message);
     }
 }
 
@@ -59,7 +66,11 @@ async function main() {
     console.log(params);
 
     // URL - get token from anchor tag (since that's not sent to server)
-    const token = window.location.hash.split('#')[1] || '';
+    const token = window.location.hash.split('#')[1] || 'missing';
+    if (token === 'missing') {
+        status("Token is missing.<br/> Please see <a href=https://github.com/bnitkin/lunch-spending-burnup>https://github.com/bnitkin/lunch-spending-burnup</a>")
+        return;
+    }
 
     // Generate timestamps for this month and last
     function pad_date(num) {return num.toString().padStart(2, '0')}
@@ -78,16 +89,20 @@ async function main() {
     // Expense tracking
     let expenses = new Array(32).fill(0);
     let expenses_last = new Array(32).fill(0);
+    let expenses_expected = new Array(32).fill(0);
     let income = new Array(32).fill(0);
     let income_last = new Array(32).fill(0);
+    let income_expected = new Array(32).fill(0);
 
     // Process transactions
     const transactions = await get(
         `v1/transactions/?start_date=${start}&end_date=${end}`, token);
+    status(`processing ${transactions.transactions.length} transactions`);
 
     if (transactions.has_more) {
-        console.error("Ignoring has_more; results will be incomplete.")
+        status("Ignoring has_more for transactions; results will be incomplete.")
     }
+
 
     for (const tx of transactions.transactions) {
         if (tx.exclude_from_totals) {
@@ -97,10 +112,13 @@ async function main() {
         console.log(`${tx.date}: processing ${tx.payee} for ${tx.to_base}`);
         let day = parseInt(tx.date.slice(-2))
         if (tx.date.includes(`-${month}-`)) {
-            if (tx.is_income)
+            if (tx.is_income) {
                 income[day] -= tx.to_base;
-            else
+                income_expected[day] -= tx.to_base;
+            } else {
                 expenses[day] += tx.to_base;
+                expenses_expected[day] += tx.to_base;
+            }
         }
         if (tx.date.includes(`-${lastMonth}-`)) {
             if (tx.is_income)
@@ -114,9 +132,10 @@ async function main() {
     if (params.expected_transactions) {
         const recurring = await get(
                 `v1/recurring_items`, token);
+        status(`processing ${recurring.length} recurring items`);
 
-        if (transactions.has_more) {
-            console.error("Ignoring has_more; results will be incomplete.")
+        if (recurring.has_more) {
+            status("Ignoring has_more for recurring; results will be incomplete.")
         }
 
         for (const tx of recurring) {
@@ -137,15 +156,16 @@ async function main() {
                 const day = occur_date.slice(-2)
                     console.log(`${occur_date}: ${tx.payee} expected for ${tx.to_base}`);
                 if (tx.is_income)
-                    income[day] -= tx.to_base;
+                    income_expected[day] -= tx.to_base;
                 else
-                    expenses[day] += tx.to_base;
+                    expenses_expected[day] += tx.to_base;
             }
         }
     }
 
     // Process Plaid-synced assets to get current cash position
     const assets = await get(`v1/plaid_accounts`, token);
+    status(`processing ${assets.plaid_accounts.length} accounts`);
     let cards = 0
     let checking = 0;
     let savings = 0;
@@ -154,7 +174,7 @@ async function main() {
         if (asset.subtype == "checking") checking += asset.to_base
         if (asset.subtype == "savings") savings += asset.to_base
     }
-    console.log(cards, checking);
+    status(`found $${checking} in checking and $${cards} on credit cards`);
 
     // Compute monthly totals
     const income_total = Math.abs(income.reduce((sum, num) => sum + num));
@@ -166,6 +186,8 @@ async function main() {
             income_total, income_last_total,
             expenses_total, expenses_last_total);
     chart_max_val = Math.ceil(chart_max_val/500) * 500;
+
+    document.getElementById('status').style = "display: none";
 
     // Drawing data.
     let canvas = document.getElementById('graph');
@@ -192,6 +214,7 @@ async function main() {
 
     const line_height = 0.08;
 
+    // Last month's stuff. These use a translucent box fill
     c.strokeStyle = '#5C5';
     if (params.income_last) {
         c.globalAlpha = 0.3;
@@ -204,18 +227,34 @@ async function main() {
         monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_last, chart_max_val, params.fill_last, "all");
     }
 
-    const future_style = params.expected_transactions ? "dash" : "stop";
+    // Recorded transactions - these are recorded on solid lines.
     c.strokeStyle = '#5C5';
     if (params.income) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val, false, future_style);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income, chart_max_val, false, "stop");
     }
 
     c.strokeStyle = '#C55';
     if (params.expenses) {
         c.globalAlpha = 1.0;
-        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val, false, future_style);
+        monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses, chart_max_val, false, "stop");
     }
+
+    // Expected transactions. This might diverge from actual history if bills or income clear late.
+    if (params.expected_transactions) {
+        c.strokeStyle = '#5C5';
+        if (params.income) {
+            c.globalAlpha = 1.0;
+            monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, income_expected, chart_max_val, false, "dash");
+        }
+
+        c.strokeStyle = '#C55';
+        if (params.expenses) {
+            c.globalAlpha = 1.0;
+            monthGraph(c, 0, height*.4, width, height*.6-c.lineWidth, expenses_expected, chart_max_val, false, "dash");
+        }
+    }
+
 
     // Top and bottom of the graph view
     c.strokeStyle = '#999';
@@ -235,7 +274,7 @@ async function main() {
     c.stroke();
 }
 
-function monthGraph(c, left, top, width, height, data, max_val=4000, fill, future="all") {
+function monthGraph(c, left, top, width, height, data, max_val=4000, fill, line="all") {
     point = function(x, y) {
         x = x * width / 33 + left;
         y = top + height - y * height / max_val;
@@ -247,14 +286,13 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, fill, futur
 
     c.beginPath();
     c.setLineDash([]);
+    if (line === "dash") {
+        c.setLineDash([0, c.lineWidth*2]);
+    }
     let total = 0;
     let day = 1;
     for (day=1; day<=31; day++) {
-        if ((future === "dash") && day == today + 1) {
-            c.stroke();
-            c.setLineDash([0, c.lineWidth*2]);
-        }
-        if ((future === "stop") && day == today + 1) {
+        if ((line === "stop") && day == today + 1) {
             break;
         }
         total += data[day];
@@ -274,6 +312,7 @@ window.onload = main;
         </script>
     </head>
     <body style="margin:0; padding:0; overflow:hidden">
+        <p id="status" style="padding: 10px; font-family: monospace">loading Lunch Money data (JS required)</p>
         <canvas id="graph" width=300 height=300>
         </canvas>
     </body>
