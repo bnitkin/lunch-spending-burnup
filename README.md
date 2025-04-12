@@ -9,11 +9,11 @@ I don't want your personal data.)
 <img alt="widget preview" src="https://github.com/user-attachments/assets/c4cd1a00-06a5-42af-bb75-f2ff44455e42" />
 
 ### Usage
-First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. Then either:
+First, generate a Lunch Money [API Key](https://my.lunchmoney.app/developers). Then either:
  - go to https://nitkin.net/lunch/netcash.html#API_KEY
  - download `netcash.html` and open it in your favorite browser. Something like
    `file:///home/username/netcash.html#API_KEY`
- - for iOS, use (Glimpse 2)[https://apps.apple.com/us/app/glimpse-2/id1524217845] (or similar)
+ - for iOS, use [Glimpse 2](https://apps.apple.com/us/app/glimpse-2/id1524217845)c(or similar)
    to view the webpage as a widget. Use a 4h+ refresh interval to not spam the Lunch API.
  - I'm sure there's something similar on Android, but I don't have one to check.
 
