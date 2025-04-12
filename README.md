@@ -6,9 +6,7 @@ and spending. It's a good way to show a lot of data in a pretty readable format.
 (theirs is more polished, but I won't sell your personal data. Or see it.
 I don't want your personal data.)
 
-![widget preview](https://github.com/user-attachments/assets/0def4828-50bf-4389-a84e-d096213f5f0d)
-
-(the top numbers use the Plaid account API, and that doesn't work for Lunch's demo budget)
+<img alt="widget preview" src="https://github.com/user-attachments/assets/c4cd1a00-06a5-42af-bb75-f2ff44455e42" />
 
 ### Usage
 First, generate a Lunch Money (API Key)[https://my.lunchmoney.app/developers]. Then either:
