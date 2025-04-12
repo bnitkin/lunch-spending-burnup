@@ -176,6 +176,19 @@ async function main() {
     }
     status(`found $${checking} in checking and $${cards} on credit cards`);
 
+    // The same, but for manually-managed assets.
+    const manual_assets = await get(`v1/assets`, token);
+    status(`processing ${manual_assets.assets.length} accounts`);
+    for (asset of manual_assets.assets) {
+        if (asset.type_name == "credit") cards += asset.to_base;
+        if (asset.type_name == "cash") {
+            if (asset.subtype == "savings") savings += asset.to_base;
+            else  checking += asset.to_base;
+        }
+    }
+    status(`found $${checking} in checking and $${cards} on credit cards`);
+
+
     // Compute monthly totals
     const income_total = Math.abs(income.reduce((sum, num) => sum + num));
     const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
@@ -185,7 +198,7 @@ async function main() {
     let chart_max_val = Math.max(
             income_total, income_last_total,
             expenses_total, expenses_last_total);
-    chart_max_val = Math.ceil(chart_max_val/500) * 500;
+    chart_max_val = Math.ceil((200+chart_max_val)/500) * 500;
 
     document.getElementById('status').style = "display: none";
 
