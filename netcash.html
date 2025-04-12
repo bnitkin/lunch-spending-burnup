@@ -214,8 +214,8 @@ async function main() {
     c.font = `${canvas_size/25}pt monospace`;
     c.fillStyle = '#000'
 
-    function pad(num) {return ('$'+Math.round(num).toString()).padStart(5, ' ')};
-    c.fillText(`Savings:  ${pad(savings)} | ${Math.round(savings / expenses_last_total)}mo`, width*.02, height*.08);
+    function pad(num) {return ('$'+Math.round(num).toString()).padStart(6, ' ')};
+    c.fillText(`Savings:  ${pad(savings)} | ${Math.round((checking+savings) / expenses_last_total)}mo`, width*.02, height*.08);
     c.fillText(`Checking: ${pad(checking)} |`, width*.02, height*.16);
     c.fillText(`Credit:  -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
     c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_total)} left`, width*.02, height*0.32);
