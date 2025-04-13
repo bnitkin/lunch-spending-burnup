@@ -60,7 +60,7 @@ async function main() {
         expenses: param('expenses', true),
         expenses_last: param('expenses_last', true),
         expected_transactions: param('expected', true),
-        safe_spend: param('spend', 3250),
+        safe_spend: param('safe_spend', 3000),
         fill_last: param('fill_last', true),
     };
     console.log(params);
@@ -106,7 +106,11 @@ async function main() {
 
     for (const tx of transactions.transactions) {
         if (tx.exclude_from_totals) {
-            console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
+            console.log(`${tx.date}: excluding ${tx.payee} for ${tx.to_base}`);
+            continue;
+        }
+        if (tx.has_children) {
+            console.log(`${tx.date}: ${tx.payee} for ${tx.to_base} is a split`);
             continue;
         }
         console.log(`${tx.date}: processing ${tx.payee} for ${tx.to_base}`);
@@ -140,7 +144,7 @@ async function main() {
 
         for (const tx of recurring) {
             if (tx.exclude_from_totals) {
-                console.log(`${tx.date}: ignoring ${tx.payee} for ${tx.to_base}`);
+                console.log(`${tx.date}: excluding ${tx.payee} for ${tx.to_base}`);
                 continue;
             }
             for (const occur_date in tx.occurrences) {
@@ -174,7 +178,6 @@ async function main() {
         if (asset.subtype == "checking") checking += asset.to_base
         if (asset.subtype == "savings") savings += asset.to_base
     }
-    status(`found $${checking} in checking and $${cards} on credit cards`);
 
     // The same, but for manually-managed assets.
     const manual_assets = await get(`v1/assets`, token);
@@ -183,11 +186,10 @@ async function main() {
         if (asset.type_name == "credit") cards += asset.to_base;
         if (asset.type_name == "cash") {
             if (asset.subtype == "savings") savings += asset.to_base;
-            else  checking += asset.to_base;
+            if (asset.subtype == "checking") checking += asset.to_base;
         }
     }
     status(`found $${checking} in checking and $${cards} on credit cards`);
-
 
     // Compute monthly totals
     const income_total = Math.abs(income.reduce((sum, num) => sum + num));
@@ -215,7 +217,7 @@ async function main() {
     c.fillStyle = '#000'
 
     function pad(num) {return ('$'+Math.round(num).toString()).padStart(6, ' ')};
-    c.fillText(`Savings:  ${pad(savings)} | ${Math.round((checking+savings) / expenses_last_total)}mo`, width*.02, height*.08);
+    c.fillText(`Savings:  ${pad(savings)} | ${(Math.round((checking+savings) / expenses_last_total)).toString().padStart(6, ' ')} mo`, width*.02, height*.08);
     c.fillText(`Checking: ${pad(checking)} |`, width*.02, height*.16);
     c.fillText(`Credit:  -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
     c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_total)} left`, width*.02, height*0.32);

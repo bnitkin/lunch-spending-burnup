@@ -35,7 +35,7 @@ Unless otherwise noted, fields can be set to `true` or `false`
  - `expected`: Default `true`. Parse and show expected
         recurring transactions for the month. They render on the chart as a dotted line,
         and will also impact `Spent`/`left` math in the top box.
- - `safe_spend`: Numeric. Default `3250`. Safe-spend provides a reverse budget -
+ - `safe_spend`: Numeric. Default `3000`. This provides a reverse budget -
         if you like to calculate savings goals and work backwards to
         a comfortable spending level. It's used to compute the `left` field.
 
