@@ -48,7 +48,7 @@ async function main() {
             return missing;
         }
         if (typeof missing === "number") {
-            if (!isNan(parseInt(value))) return parseInt(value);
+            if (!isNaN(parseInt(value))) return parseInt(value);
             return missing;
         }
     }
