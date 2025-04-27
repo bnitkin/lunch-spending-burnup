@@ -197,11 +197,12 @@ async function main() {
     const income_total = Math.abs(income.reduce((sum, num) => sum + num));
     const income_last_total = Math.abs(income_last.reduce((sum, num) => sum + num));
     const expenses_total = Math.abs(expenses.reduce((sum, num) => sum + num));
+    const expenses_expected_total = Math.abs(expenses_expected.reduce((sum, num) => sum + num));
     const expenses_last_total = Math.abs(expenses_last.reduce((sum, num) => sum + num));
 
     let chart_max_val = Math.max(
             income_total, income_last_total,
-            expenses_total, expenses_last_total);
+            expenses_total, expenses_expected_total, expenses_last_total);
     chart_max_val = Math.ceil((200+chart_max_val)/500) * 500;
 
     document.getElementById('status').style = "display: none";
@@ -222,7 +223,7 @@ async function main() {
     c.fillText(`Savings:  ${pad(savings)} | ${(Math.round((checking+savings) / expenses_last_total)).toString().padStart(6, ' ')} mo`, width*.02, height*.08);
     c.fillText(`Checking: ${pad(checking)} |`, width*.02, height*.16);
     c.fillText(`Credit:  -${pad(cards)} | ${pad(checking-cards)} net`, width*.02, height*.24);
-    c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_total)} left`, width*.02, height*0.32);
+    c.fillText(`Spent:    ${pad(expenses_total)} | ${pad(params.safe_spend - expenses_expected_total)} left`, width*.02, height*0.32);
 
     c.lineWidth = width/60;
     c.lineCap = 'round';

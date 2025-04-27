@@ -52,10 +52,10 @@ The top fields show cash holdings and a [reverse budget](https://lunchmoney.app/
  - Cards: total balance on credit cards. `net` shows the difference
    between checking and cards. A positive net means there's
    enough in checking to pay off the cards.
- - Spent: This is total spending for the month. It includes future
-   recurring transactions, if they're enabled (see `expected` option).
-   The `left` field computes safe spending for the month (`safe_spend - spent`)
-   
+ - Spent: This is total spending for the month.
+   The `left` field computes safe spending for the month, including
+   expected future recurring spending (`safe_spend - spent - recurring`)
+
 ### Other Features
  - The chart automatically resizes, rounding to the next $500.
  - Options to customize the chart
