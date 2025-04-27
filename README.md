@@ -42,7 +42,8 @@ Unless otherwise noted, fields can be set to `true` or `false`
 ### Key
  - Expenses are red, income is green
  - Last month is shown as a translucent filled-box; this month is a line
- - Expected recurring transactions are displayed as a dotted line
+ - Pending and expected recurring transactions are displayed as a dotted line
+   (pending expenses usually clear quickly, but security holds for cars or hotels can be misleading for budgeting)
 
 The top fields show cash holdings and a [reverse budget](https://lunchmoney.app/blog/pay-yourself-first-reverse-budgeting)
  - Savings: the total balance in savings accounts. The right side

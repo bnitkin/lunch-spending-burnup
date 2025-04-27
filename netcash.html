@@ -117,10 +117,12 @@ async function main() {
         let day = parseInt(tx.date.slice(-2))
         if (tx.date.includes(`-${month}-`)) {
             if (tx.is_income) {
-                income[day] -= tx.to_base;
+                if (tx.status !== "pending")
+                    income[day] -= tx.to_base;
                 income_expected[day] -= tx.to_base;
             } else {
-                expenses[day] += tx.to_base;
+                if (tx.status !== "pending")
+                    expenses[day] += tx.to_base;
                 expenses_expected[day] += tx.to_base;
             }
         }
