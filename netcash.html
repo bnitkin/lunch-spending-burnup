@@ -159,8 +159,8 @@ async function main() {
                 if (!occur_date.includes(`-${month}-`)) {
                     continue;
                 }
-                const day = occur_date.slice(-2)
-                    console.log(`${occur_date}: ${tx.payee} expected for ${tx.to_base}`);
+                const day = parseInt(occur_date.slice(-2));
+                console.log(`${occur_date}: ${tx.payee} expected on ${day} for ${tx.to_base}`);
                 if (tx.is_income)
                     income_expected[day] -= tx.to_base;
                 else
