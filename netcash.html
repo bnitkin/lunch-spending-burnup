@@ -300,6 +300,7 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, fill, line=
         return
     }
 
+    console.log("Graphing", data);
     var today = new Date().getDate();
 
     c.beginPath();
@@ -308,8 +309,8 @@ function monthGraph(c, left, top, width, height, data, max_val=4000, fill, line=
         c.setLineDash([0, c.lineWidth*2]);
     }
     let total = 0;
-    let day = 1;
-    for (day=1; day<=31; day++) {
+    let day = 0;
+    for (day=0; day<=31; day++) {
         if ((line === "stop") && day == today + 1) {
             break;
         }
